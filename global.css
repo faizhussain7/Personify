@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #1a3c34;
+    --secondary: #f5f0e1;
+    --accent: #d4a017;
+    --neutral: #6b7280;
+    --success: #10b981;
+    --error: #f87171;
+    --background: #f5f0e1;
+    --text: #1a3c34;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --primary: #0f241f;
+      --secondary: #b8ad87;
+      --accent: #8a6800;
+      --neutral: #4b5563;
+      --success: #0a6b4e;
+      --error: #b91c1c;
+      --background: #0f1b18;
+      --text: #b8ad87;
+    }
+  }
+}
