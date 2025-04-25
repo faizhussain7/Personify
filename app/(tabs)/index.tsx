@@ -8,8 +8,6 @@ import {
   ActivityIndicator,
   BackHandler,
   TextInput,
-  Dimensions,
-  Platform,
 } from 'react-native';
 import {
   BottomSheetModal,
@@ -184,7 +182,11 @@ function PersonItem({
                   onPress={() =>
                     Alert.alert('Confirm Delete', `Are you sure you want to delete ${item.name}?`, [
                       { text: 'Cancel', style: 'cancel' },
-                      { text: 'Delete', style: 'destructive', onPress: () => onDelete(item.id) },
+                      {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: () => onDelete(item.id.toString()),
+                      },
                     ])
                   }
                   accessibilityLabel={`Delete ${item.name}`}>
@@ -267,7 +269,7 @@ export default function HomeScreen() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const response = await fetch('/api/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -317,19 +319,19 @@ export default function HomeScreen() {
     const personData = {
       name: formData.name,
       email: formData.email,
-      ...(formData.age ? { age: parseInt(formData.age) } : {}),
+      ...(formData.age ? { age: parseInt(formData.age.toString()) } : {}),
     };
 
     if (isEditing && formData.id) {
-      updateMutation.mutate({ id: formData.id, ...personData });
+      updateMutation.mutate({ id: formData.id, ...personData } as any);
     } else {
-      addMutation.mutate(personData);
+      addMutation.mutate(personData as any);
     }
   };
 
   const renderFooter = useCallback(
     (props: JSX.IntrinsicAttributes & BottomSheetDefaultFooterProps) => (
-      <BottomSheetFooter {...props} bottomInset={insets.bottom}>
+      <BottomSheetFooter {...props}>
         <View className="flex-row gap-4 px-6 pb-6">
           <TouchableOpacity
             onPress={closeBottomSheet}
@@ -460,7 +462,7 @@ export default function HomeScreen() {
         item={item}
         index={index}
         onOpenSheet={handleOpenSheet}
-        onDelete={deleteMutation.mutate}
+        onDelete={(id: string) => deleteMutation.mutate(id)}
       />
     ),
     [deleteMutation.mutate]
@@ -551,15 +553,18 @@ export default function HomeScreen() {
         footerComponent={renderFooter}
         enablePanDownToClose
         enableHandlePanningGesture
-        keyboardBehavior="interactive"
+        enableDynamicSizing={false}
+        keyboardBehavior="fillParent"
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
-        containerStyle={{ marginTop: insets.top }}
+        bottomInset={(insets?.bottom ?? 0) + 24}
+        topInset={insets?.top ?? 0}
+        containerStyle={{ borderRadius: 10, marginHorizontal: 16 }}
         accessibilityLabel={isEditing ? 'Edit person modal' : 'Add person modal'}>
         <BottomSheetView className="flex-1 px-6 pt-4">
           <Animated.View style={bottomSheetContentAnimatedStyle}>
             <View className="mb-6 flex-row items-center">
-              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-primary bg-opacity-20">
+              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-opacity-20">
                 {isEditing ? (
                   <Edit size={24} color="#1A3C34" />
                 ) : (
@@ -567,14 +572,14 @@ export default function HomeScreen() {
                 )}
               </View>
               <Text className="text-2xl font-bold text-primary">
-                {isEditing ? 'Edit Contact' : 'Add New Contact'}
+                {isEditing ? 'Edit Person' : 'Add New Person'}
               </Text>
             </View>
             <View className="space-y-2">
               <FormField
                 label="Full Name"
                 value={formData.name || ''}
-                onChangeText={(text: any) => setFormData({ ...formData, name: text })}
+                onChangeText={(text: string) => setFormData((prev) => ({ ...prev, name: text }))}
                 placeholder="Enter full name"
                 autoCapitalize="words"
                 icon={UserCircle2}
@@ -582,7 +587,7 @@ export default function HomeScreen() {
               <FormField
                 label="Email Address"
                 value={formData.email || ''}
-                onChangeText={(text: any) => setFormData({ ...formData, email: text })}
+                onChangeText={(text: string) => setFormData((prev) => ({ ...prev, email: text }))}
                 placeholder="Enter email address"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -591,7 +596,9 @@ export default function HomeScreen() {
               <FormField
                 label="Age"
                 value={formData.age?.toString() || ''}
-                onChangeText={(text: any) => setFormData({ ...formData, age: text })}
+                onChangeText={(text: string) =>
+                  setFormData((prev) => ({ ...prev, age: parseInt(text, 10) || 0 }))
+                }
                 placeholder="Enter age"
                 keyboardType="numeric"
                 icon={Calendar}
